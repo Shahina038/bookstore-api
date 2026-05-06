@@ -5,6 +5,13 @@ import (
 	"bookstore/internal/model"
 )
 
+type UserRepo interface {
+    Create(user *model.User) error
+    GetByEmail(email string) (*model.User, error)
+    GetByID(id string) (*model.User, error)
+    SoftDelete(id string) error
+}
+
 type UserRepository struct {
 	db *sql.DB
 }
@@ -13,7 +20,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) CreateUser(user *model.User) error {
+func (r *UserRepository) Create(user *model.User) error {
 	query := `
 		INSERT INTO users (name, email, password)
 		VALUES ($1, $2, $3)
@@ -58,12 +65,13 @@ func (r *UserRepository) GetByID(id string) (*model.User, error) {
 }
 
 
-func (r *UserRepository) SoftDelete(userID int) error {
-	query := `
-		UPDATE users
-		SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW()
-		WHERE id = $1`
+func (r *UserRepository) SoftDelete(id string) error {
+    query := `
+        UPDATE users
+        SET is_deleted = TRUE, deleted_at = NOW(), updated_at = NOW()
+        WHERE id = $1`
 
-	_, err := r.db.Exec(query, userID)
-	return err
+    _, err := r.db.Exec(query, id)
+    return err
 }
+
