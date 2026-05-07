@@ -17,6 +17,9 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 	bookRepo := repository.NewBookRepository(db)
 	bookHandler := handler.NewBookHandler(bookRepo)
 
+	cartRepo := repository.NewCartRepository(db)
+	cartHandler := handler.NewCartHandler(cartRepo)
+
 	auth := middleware.Auth(cfg.JWTSecret)
 
 	mux := http.NewServeMux()
@@ -28,11 +31,17 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 	mux.Handle("DELETE /user-delete", auth(http.HandlerFunc(userHandler.Delete)))
 
 	// Book routes
-	mux.Handle("POST /books", auth(http.HandlerFunc(bookHandler.CreateBook)))
-	mux.HandleFunc("GET /books", bookHandler.GetAllBooks)
-	mux.HandleFunc("GET /book/{id}", bookHandler.GetBookByID)
-	mux.Handle("PUT /books/{id}", auth(http.HandlerFunc(bookHandler.UpdateBook)))
-	mux.Handle("DELETE /books/{id}", auth(http.HandlerFunc(bookHandler.DeleteBook)))
+	mux.HandleFunc("POST /books", bookHandler.CreateBook)
+	mux.HandleFunc("PATCH /books/{id}", bookHandler.UpdateBook)
+	mux.HandleFunc("DELETE /books/{id}", bookHandler.DeleteBook)
+	mux.Handle("GET /books", auth(http.HandlerFunc(bookHandler.GetAllBooks)))
+	mux.Handle("GET /book/{id}", auth(http.HandlerFunc(bookHandler.GetBookByID)))
+
+	// Cart routes (token required)
+	mux.Handle("GET /cart-items", auth(http.HandlerFunc(cartHandler.GetCartItems)))
+	mux.Handle("POST /cart-items", auth(http.HandlerFunc(cartHandler.AddCartItem)))
+	mux.Handle("PATCH /cart-item/{id}", auth(http.HandlerFunc(cartHandler.UpdateItem)))
+	mux.Handle("DELETE /cart-item/{id}", auth(http.HandlerFunc(cartHandler.RemoveItem)))
 
 	return mux
 }

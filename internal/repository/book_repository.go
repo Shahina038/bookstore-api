@@ -82,7 +82,6 @@ func (r *BookRepository) UpdateStock(tx *sql.Tx, bookID string, quantity int) er
 		UPDATE books
 		SET stock = stock - $1, updated_at = NOW()
 		WHERE id = $2 AND stock >= $1`
-
 	result, err := tx.Exec(query, quantity, bookID)
 	if err != nil {
 		return err
@@ -97,7 +96,6 @@ func (r *BookRepository) UpdateStock(tx *sql.Tx, bookID string, quantity int) er
 	}
 	return nil
 }
-
 
 func (r *BookRepository) Update(book *model.Book) error {
 	query := `
