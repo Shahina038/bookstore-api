@@ -16,6 +16,8 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 
 	bookRepo := repository.NewBookRepository(db)
 	bookHandler := handler.NewBookHandler(bookRepo)
+	orderRepo := repository.NewOrderRepository(db, bookRepo)
+	orderHandler := handler.NewOrderHandler(orderRepo)
 
 	cartRepo := repository.NewCartRepository(db)
 	cartHandler := handler.NewCartHandler(cartRepo)
@@ -42,6 +44,11 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 	mux.Handle("POST /cart-items", auth(http.HandlerFunc(cartHandler.AddCartItem)))
 	mux.Handle("PATCH /cart-item/{id}", auth(http.HandlerFunc(cartHandler.UpdateItem)))
 	mux.Handle("DELETE /cart-item/{id}", auth(http.HandlerFunc(cartHandler.RemoveItem)))
+
+	// Order routes (token required)
+	mux.Handle("POST /orders", auth(http.HandlerFunc(orderHandler.Checkout)))
+	mux.Handle("GET /orders", auth(http.HandlerFunc(orderHandler.GetOrders)))
+	mux.Handle("GET /order/{id}", auth(http.HandlerFunc(orderHandler.GetOrderByID)))
 
 	return mux
 }
