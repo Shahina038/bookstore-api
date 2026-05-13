@@ -10,6 +10,7 @@ type UserRepo interface {
     GetByEmail(email string) (*model.User, error)
     GetByID(id string) (*model.User, error)
     SoftDelete(id string) error
+	GetAll() ([]*model.User, error)
 }
 
 type UserRepository struct {
@@ -33,12 +34,12 @@ func (r *UserRepository) Create(user *model.User) error {
 func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 	user := &model.User{}
 	query := `
-		SELECT id, name, email, password, is_deleted, created_at, updated_at
+		SELECT id, name, email, password, is_admin, is_deleted, created_at, updated_at
 		FROM users
 		WHERE email = $1 AND is_deleted = FALSE`
 
 	err := r.db.QueryRow(query, email).Scan(
-		&user.ID, &user.Name, &user.Email, &user.Password,
+		&user.ID, &user.Name, &user.Email, &user.Password, &user.IsAdmin,
 		&user.IsDeleted, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -50,12 +51,12 @@ func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 func (r *UserRepository) GetByID(id string) (*model.User, error) {
 	user := &model.User{}
 	query := `
-		SELECT id, name, email, is_deleted, created_at, updated_at
+		SELECT id, name, email, is_admin, is_deleted, created_at, updated_at
 		FROM users
 		WHERE id = $1 AND is_deleted = FALSE`
 
 	err := r.db.QueryRow(query, id).Scan(
-		&user.ID, &user.Name, &user.Email,
+		&user.ID, &user.Name, &user.Email, &user.IsAdmin,
 		&user.IsDeleted, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -75,3 +76,29 @@ func (r *UserRepository) SoftDelete(id string) error {
     return err
 }
 
+func (r *UserRepository) GetAll() ([]*model.User, error) {
+	query := `
+		SELECT id, name, email, is_admin, is_deleted, created_at, updated_at
+		FROM users
+		ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*model.User
+	for rows.Next() {
+		user := &model.User{}
+		err := rows.Scan(
+			&user.ID, &user.Name, &user.Email, &user.IsAdmin, &user.IsDeleted,
+			&user.CreatedAt, &user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}

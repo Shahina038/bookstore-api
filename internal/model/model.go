@@ -13,6 +13,7 @@ type User struct {
 	Name      string     `json:"name"`
 	Email     string     `json:"email"`
 	Password  string     `json:"-"`
+	IsAdmin   bool       `json:"is_admin"`
 	IsDeleted bool       `json:"is_deleted"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 }
