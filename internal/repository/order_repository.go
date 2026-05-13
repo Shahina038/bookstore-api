@@ -9,6 +9,7 @@ type OrderRepo interface {
 	CreateOrder(userID string) (*model.Order, error)
 	GetOrdersByUserID(userID string) ([]model.Order, error)
 	GetOrderByID(id string, userID string) (*model.Order, error)
+	GetAllOrders() ([]model.Order, error)
 }
 
 type OrderRepository struct {
@@ -170,4 +171,27 @@ func (r *OrderRepository) GetOrderByID(id string, userID string) (*model.Order, 
 	}
 
 	return order, nil
+}
+func (r *OrderRepository) GetAllOrders() ([]model.Order, error) {
+	query := `
+		SELECT id, user_id, total_amount, status, created_at
+		FROM orders
+		ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []model.Order
+	for rows.Next() {
+		var o model.Order
+		err := rows.Scan(&o.ID, &o.UserID, &o.TotalAmount, &o.Status, &o.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, o)
+	}
+	return orders, nil
 }

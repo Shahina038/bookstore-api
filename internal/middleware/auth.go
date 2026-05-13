@@ -17,19 +17,19 @@ func Auth(jwtSecret string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, `{"success":false,"message":"Authorization header required"}`, http.StatusUnauthorized)
+				jsonError(w, http.StatusUnauthorized, "Authorization header required")
 				return
 			}
 
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				http.Error(w, `{"success":false,"message":"Invalid authorization format"}`, http.StatusUnauthorized)
+				jsonError(w, http.StatusUnauthorized, "Invalid authorization format")
 				return
 			}
 
 			claims, err := utils.ValidateToken(parts[1], jwtSecret)
 			if err != nil {
-				http.Error(w, `{"success":false,"message":"Invalid or expired token"}`, http.StatusUnauthorized)
+				jsonError(w, http.StatusUnauthorized, "Invalid or expired token")
 				return
 			}
 

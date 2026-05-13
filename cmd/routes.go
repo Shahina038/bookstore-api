@@ -22,6 +22,18 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 	cartRepo := repository.NewCartRepository(db)
 	cartHandler := handler.NewCartHandler(cartRepo)
 
+	adminHandler := handler.NewAdminHandler(userRepo, orderRepo, bookRepo)
+
+admin := middleware.AdminOnly(userRepo)
+
+// Admin routes (JWT + admin role required)
+
+// mux.Handle("PATCH /admin/users/{id}/make-admin", auth(admin(http.HandlerFunc(adminHandler.MakeAdmin))))
+
+
+// Book management — admin only
+
+
 	auth := middleware.Auth(cfg.JWTSecret)
 
 	mux := http.NewServeMux()
@@ -31,11 +43,17 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 	mux.HandleFunc("POST /login", userHandler.Login)
 	mux.Handle("GET /user", auth(http.HandlerFunc(userHandler.GetProfile)))
 	mux.Handle("DELETE /user-delete", auth(http.HandlerFunc(userHandler.Delete)))
+	mux.Handle("GET /admin/users", auth(admin(http.HandlerFunc(adminHandler.GetAllUsers))))
+	mux.Handle("GET /admin/users/{id}", auth(admin(http.HandlerFunc(adminHandler.GetUserByID))))
 
 	// Book routes
-	mux.HandleFunc("POST /books", bookHandler.CreateBook)
-	mux.HandleFunc("PATCH /books/{id}", bookHandler.UpdateBook)
-	mux.HandleFunc("DELETE /books/{id}", bookHandler.DeleteBook)
+	mux.Handle("GET /admin/books", auth(admin(http.HandlerFunc(adminHandler.GetAllBooks))))
+	mux.Handle("GET /admin/books/{id}", auth(admin(http.HandlerFunc(adminHandler.GetBookByID))))
+	mux.Handle("POST /admin/books", auth(admin(http.HandlerFunc(adminHandler.CreateBook))))
+	mux.Handle("PATCH /admin/books/{id}", auth(admin(http.HandlerFunc(adminHandler.UpdateBook))))
+	mux.Handle("DELETE /admin/books/{id}", auth(admin(http.HandlerFunc(adminHandler.DeleteBook))))
+
+	// for User
 	mux.Handle("GET /books", auth(http.HandlerFunc(bookHandler.GetAllBooks)))
 	mux.Handle("GET /book/{id}", auth(http.HandlerFunc(bookHandler.GetBookByID)))
 
@@ -49,6 +67,7 @@ func SetupRoutes(db *sql.DB, cfg *config.Config) http.Handler {
 	mux.Handle("POST /orders", auth(http.HandlerFunc(orderHandler.Checkout)))
 	mux.Handle("GET /orders", auth(http.HandlerFunc(orderHandler.GetOrders)))
 	mux.Handle("GET /order/{id}", auth(http.HandlerFunc(orderHandler.GetOrderByID)))
+	mux.Handle("GET /admin/orders", auth(admin(http.HandlerFunc(adminHandler.GetAllOrders))))
 
 	return mux
 }
