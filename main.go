@@ -7,6 +7,7 @@ import (
 	"bookstore/cmd"
 	"bookstore/internal/config"
 	"bookstore/internal/db"
+	"bookstore/internal/middleware"
 )
 
 func main() {
@@ -16,6 +17,8 @@ func main() {
 	defer database.Close()
 
 	router := cmd.SetupRoutes(database, cfg)
+	// Wrap with CORS
+	http.ListenAndServe(":"+cfg.ServerPort, middleware.CORS(router))
 
 	log.Printf("Bookstore API starting on port %s", cfg.ServerPort)
 	if err := http.ListenAndServe(":"+cfg.ServerPort, router); err != nil {
