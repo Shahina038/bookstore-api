@@ -6,6 +6,7 @@ type MockOrderRepo struct {
 	CreateOrderFn       func(userID string) (*model.Order, error)
 	GetOrdersByUserIDFn func(userID string) ([]model.Order, error)
 	GetOrderByIDFn      func(id string, userID string) (*model.Order, error)
+	GetAllOrdersFn      func() ([]model.Order, error)
 }
 
 func (m *MockOrderRepo) CreateOrder(userID string) (*model.Order, error) {
@@ -16,4 +17,7 @@ func (m *MockOrderRepo) GetOrdersByUserID(userID string) ([]model.Order, error) 
 }
 func (m *MockOrderRepo) GetOrderByID(id string, userID string) (*model.Order, error) {
 	return m.GetOrderByIDFn(id, userID)
+}
+func (m *MockOrderRepo) GetAllOrders() ([]model.Order, error) {
+	return m.GetAllOrdersFn()
 }
