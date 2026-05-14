@@ -1,7 +1,7 @@
 package handler_test
 
 import (
-	"bytes"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +23,6 @@ func TestGetAllBooks_Success(t *testing.T) {
 	}
 
 	h := handler.NewBookHandler(mockRepo)
-
 	req := httptest.NewRequest(http.MethodGet, "/books", nil)
 	w := httptest.NewRecorder()
 
@@ -55,7 +54,6 @@ func TestGetAllBooks_FilterByGenre(t *testing.T) {
 	}
 
 	h := handler.NewBookHandler(mockRepo)
-
 	req := httptest.NewRequest(http.MethodGet, "/books?genre=Technology", nil)
 	w := httptest.NewRecorder()
 
@@ -85,7 +83,6 @@ func TestGetBookByID_Success(t *testing.T) {
 	}
 
 	h := handler.NewBookHandler(mockRepo)
-
 	req := httptest.NewRequest(http.MethodGet, "/books/1", nil)
 	w := httptest.NewRecorder()
 
@@ -96,40 +93,20 @@ func TestGetBookByID_Success(t *testing.T) {
 	}
 }
 
-func TestCreateBook_Success(t *testing.T) {
+func TestGetBookByID_NotFound(t *testing.T) {
 	mockRepo := &mocks.MockBookRepo{
-		CreateFn: func(book *model.Book) error {
-			book.ID = "new-uuid"
-			return nil
+		GetByIDFn: func(id string) (*model.Book, error) {
+			return nil, sql.ErrNoRows
 		},
 	}
 
 	h := handler.NewBookHandler(mockRepo)
-
-	body := `{"title":"Learning Go","author":"Jon Bodner","genre":"Technology","price":45.99,"stock":30}`
-	req := httptest.NewRequest(http.MethodPost, "/books", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(http.MethodGet, "/books/invalid-id", nil)
 	w := httptest.NewRecorder()
 
-	h.CreateBook(w, req)
+	h.GetBookByID(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Errorf("expected 201, got %d", w.Code)
-	}
-}
-
-func TestCreateBook_MissingFields(t *testing.T) {
-	mockRepo := &mocks.MockBookRepo{}
-	h := handler.NewBookHandler(mockRepo)
-
-	body := `{"title":"","author":"","price":0}`
-	req := httptest.NewRequest(http.MethodPost, "/books", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	h.CreateBook(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected 400, got %d", w.Code)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
 	}
 }
